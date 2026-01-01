@@ -140,27 +140,26 @@ namespace Waiter.Forms
                 BackColor = Color.FromArgb(23, 29, 37)
             };
 
+            // Position buttons relative to button panel, not form
             _btnSave = new Button
             {
                 Text = _isEditMode ? "Save" : "Create",
-                Location = new Point(this.Width - 240, 15),
                 Size = new Size(100, 35),
                 BackColor = Color.FromArgb(76, 175, 80),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Bottom
+                Anchor = AnchorStyles.Right | AnchorStyles.Top
             };
             _btnSave.Click += BtnSave_Click;
 
             _btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(this.Width - 130, 15),
                 Size = new Size(100, 35),
                 BackColor = Color.FromArgb(60, 60, 60),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Bottom
+                Anchor = AnchorStyles.Right | AnchorStyles.Top
             };
             _btnCancel.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
 
@@ -182,6 +181,16 @@ namespace Waiter.Forms
 
             buttonPanel.Controls.AddRange(new Control[] { _btnSave, _btnCancel });
             this.Controls.Add(buttonPanel);
+
+            // Position buttons after panel is added
+            buttonPanel.SizeChanged += (s, e) =>
+            {
+                _btnCancel.Location = new Point(buttonPanel.Width - 120, 15);
+                _btnSave.Location = new Point(buttonPanel.Width - 230, 15);
+            };
+            // Initial positioning
+            _btnCancel.Location = new Point(buttonPanel.Width - 120, 15);
+            _btnSave.Location = new Point(buttonPanel.Width - 230, 15);
         }
 
         private void AppDetailForm_Load(object? sender, EventArgs e)

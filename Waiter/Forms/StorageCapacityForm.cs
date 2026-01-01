@@ -133,10 +133,11 @@ namespace Waiter.Forms
                 var response = await _clientService.GetStorageCapacityUsageAsync();
                 if (response != null)
                 {
-                    // Show a general storage info since the exact response structure may vary
-                    _lblStorageInfo.Text = "Storage capacity information loaded.\n\nContact server administrator for detailed capacity limits.";
-                    _lblPercentage.Text = "OK";
-                    _progressStorage.Value = 50; // Placeholder
+                    // Show storage info - data available varies by server
+                    _lblStorageInfo.Text = "Storage capacity information retrieved successfully.\n\nDetailed usage metrics depend on server configuration.";
+                    _lblPercentage.Text = "Connected";
+                    _progressStorage.Value = 0;
+                    _progressStorage.Visible = false;
                 }
                 else
                 {
