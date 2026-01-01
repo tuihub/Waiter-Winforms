@@ -111,22 +111,51 @@ The application uses SQLite for persistent storage. The database file is located
 
 This application uses the TuiHub Protos library to communicate with the server. The main service is `LibrarianSephirahService` which provides:
 
-### Tiphereth (Authentication)
+### Tiphereth (Authentication & User Management)
 - `GetToken` - Login with username/password
 - `RefreshToken` - Refresh access token
-- `GetUser` - Get current user info
+- `GetUser` / `UpdateUser` - Get/update current user info
+- `RegisterUser` - Register a new user
+- `RegisterDevice` - Register a device
+- `ListUserSessions` / `DeleteUserSession` - Session management
+- `LinkAccount` / `UnLinkAccount` / `ListLinkAccounts` - Account linking
 
 ### Gebura (App Management)
-- `ListApps` - List user's apps
-- `CreateApp` - Create a new app
-- `UpdateApp` - Update app information
-- `DeleteApp` - Delete an app
-- `SearchStoreApps` - Search apps in store
-- `GetStoreAppSummary` - Get store app details
-- `AcquireStoreApp` - Acquire an app from store
+- `ListApps` / `CreateApp` / `UpdateApp` / `DeleteApp` - App CRUD operations
+- `SearchStoreApps` / `GetStoreAppSummary` / `AcquireStoreApp` - Store operations
+- `SearchAppInfos` - Search app information
 - `ListAppCategories` / `CreateAppCategory` / `UpdateAppCategory` / `DeleteAppCategory` - Category management
-- `ListAppSaveFiles` / `UploadAppSaveFile` / `DownloadAppSaveFile` - Save file management
-- `BatchCreateAppRunTime` / `ListAppRunTimes` - Runtime tracking
+- `ListAppSaveFiles` / `UploadAppSaveFile` / `DownloadAppSaveFile` / `DeleteAppSaveFile` - Save file management
+- `PinAppSaveFile` / `UnpinAppSaveFile` / `GetAppSaveFileCapacity` / `SetAppSaveFileCapacity` - Save file capacity
+- `BatchCreateAppRunTime` / `ListAppRunTimes` / `DeleteAppRunTime` / `SumAppRunTime` - Runtime tracking
+- `ListStoreAppBinaries` / `DownloadStoreAppBinary` / `ListStoreAppBinaryFiles` - Store app binaries
+- `ListStoreAppSaveFiles` / `DownloadStoreAppSaveFile` - Store app save files
+
+### Yesod (Feed Management)
+- `CreateFeedConfig` / `UpdateFeedConfig` / `ListFeedConfigs` - Feed configuration
+- `ListFeedItems` / `GetFeedItem` / `GetBatchFeedItems` / `ReadFeedItem` - Feed items
+- `ListFeedCategories` / `ListFeedPlatforms` - Feed metadata
+- `CreateFeedItemCollection` / `UpdateFeedItemCollection` / `ListFeedItemCollections` - Collections
+- `AddFeedItemToCollection` / `RemoveFeedItemFromCollection` / `ListFeedItemsInCollection` - Collection items
+- `CreateFeedActionSet` / `UpdateFeedActionSet` / `ListFeedActionSets` - Feed actions
+
+### Netzach (Notification Management)
+- `CreateNotifyTarget` / `UpdateNotifyTarget` / `ListNotifyTargets` - Notification targets
+- `CreateNotifyFlow` / `UpdateNotifyFlow` / `ListNotifyFlows` - Notification flows
+- `ListSystemNotifications` / `UpdateSystemNotification` - System notifications
+
+### Chesed (Image Management)
+- `UploadImage` / `UpdateImage` / `ListImages` - Image operations
+- `SearchImages` / `GetImage` / `DownloadImage` - Image retrieval
+
+### Binah (File Operations)
+- `PresignedUploadFile` / `PresignedUploadFileStatus` - File upload
+- `PresignedDownloadFile` - File download
+- `GetStorageCapacityUsage` - Storage usage
+
+### Angela (Porter Management)
+- `ListPorterDigests` - List porter digests
+- `CreatePorterContext` / `ListPorterContexts` / `UpdatePorterContext` - Porter context management
 
 ## License
 
