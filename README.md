@@ -9,12 +9,14 @@ A WinForms client application for TuiHub, designed with a classic Steam-like int
   - Automatic token refresh using RefreshToken
   - Support for DownloadToken (reserved for future use)
   - Token interceptor pattern for seamless API authentication
+  - Persistent token storage with SQLite database
 
 - **App Management**
   - Browse and manage your app library
   - Search apps in the store
   - Acquire apps from the store
   - View app details
+  - Delete apps
 
 - **App Category Management**
   - Create, update, and delete app categories
@@ -27,7 +29,11 @@ A WinForms client application for TuiHub, designed with a classic Steam-like int
 
 - **Settings**
   - Configurable server URL
-  - Persistent configuration storage
+  - Persistent configuration storage with SQLite database
+
+- **Data Persistence**
+  - SQLite database backend using Entity Framework Core
+  - Stores user credentials, settings, cached data, and task history
 
 ## Requirements
 
@@ -51,6 +57,15 @@ dotnet run --project Waiter
 
 ```
 Waiter/
+├── Data/                     # Entity Framework Core
+│   ├── Models/              # Database entity models
+│   │   ├── UserCredential.cs
+│   │   ├── AppSetting.cs
+│   │   ├── CachedApp.cs
+│   │   ├── CachedAppCategory.cs
+│   │   └── TaskHistory.cs
+│   ├── WaiterDbContext.cs   # EF Core DbContext
+│   └── DatabaseService.cs   # Database operations service
 ├── Forms/                    # WinForms UI
 │   ├── MainForm.cs          # Main application window (Steam-like layout)
 │   ├── LoginForm.cs         # Login dialog
@@ -59,8 +74,8 @@ Waiter/
 │   └── BackgroundTasksForm.cs # Background task viewer
 ├── Services/                 # Core services
 │   ├── LibrarianClientService.cs  # gRPC client for TuiHub API
-│   ├── TokenService.cs           # JWT token management
-│   ├── ConfigService.cs          # Application configuration
+│   ├── TokenService.cs           # JWT token management (with DB persistence)
+│   ├── ConfigService.cs          # Application configuration (with DB persistence)
 │   └── BackgroundTaskService.cs  # Background task management
 ├── Interceptors/             # gRPC interceptors
 │   └── ClientTokenInterceptor.cs # Automatic token handling
@@ -71,12 +86,26 @@ Waiter/
 
 ## Dependencies
 
-- **TuiHub.Protos** - Protocol buffer definitions for TuiHub API
+- **TuiHub.Protos** (0.6.2) - Protocol buffer definitions for TuiHub API
 - **Grpc.Net.Client** - gRPC client for .NET
 - **Google.Protobuf** - Protocol buffers runtime
 - **Microsoft.Extensions.DependencyInjection** - Dependency injection
 - **Microsoft.Extensions.Hosting** - Application hosting
 - **Microsoft.Extensions.Logging** - Logging infrastructure
+- **Microsoft.EntityFrameworkCore** - ORM for database access
+- **Microsoft.EntityFrameworkCore.Sqlite** - SQLite database provider
+
+## Database
+
+The application uses SQLite for persistent storage. The database file is located at:
+- Windows: `%APPDATA%\TuiHub\Waiter\waiter.db`
+
+### Tables
+- **UserCredentials** - Stores user authentication tokens
+- **AppSettings** - Key-value pairs for application settings
+- **CachedApps** - Cached app information for offline viewing
+- **CachedAppCategories** - Cached category information
+- **TaskHistories** - Background task history
 
 ## API Reference
 
@@ -91,6 +120,7 @@ This application uses the TuiHub Protos library to communicate with the server. 
 - `ListApps` - List user's apps
 - `CreateApp` - Create a new app
 - `UpdateApp` - Update app information
+- `DeleteApp` - Delete an app
 - `SearchStoreApps` - Search apps in store
 - `GetStoreAppSummary` - Get store app details
 - `AcquireStoreApp` - Acquire an app from store

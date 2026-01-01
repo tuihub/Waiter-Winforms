@@ -1,14 +1,16 @@
 using System;
-using System.Text.Json;
+using Waiter.Data;
 
 namespace Waiter.Services
 {
     /// <summary>
     /// Manages application configuration including server URL.
+    /// Persists configuration to SQLite database.
     /// </summary>
     public class ConfigService
     {
-        private const string ConfigFileName = "waiter_config.json";
+        private const string ServerUrlKey = "ServerUrl";
+        private readonly DatabaseService _databaseService;
         private string _serverUrl = "https://localhost:5001";
 
         public event EventHandler? ConfigChanged;
@@ -21,38 +23,26 @@ namespace Waiter.Services
                 if (_serverUrl != value)
                 {
                     _serverUrl = value;
-                    SaveConfig();
+                    SaveConfigAsync().GetAwaiter().GetResult();
                     ConfigChanged?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
 
-        public ConfigService()
+        public ConfigService(DatabaseService databaseService)
         {
-            LoadConfig();
+            _databaseService = databaseService;
+            LoadConfigAsync().GetAwaiter().GetResult();
         }
 
-        private string GetConfigPath()
-        {
-            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var waiterPath = Path.Combine(appDataPath, "TuiHub", "Waiter");
-            Directory.CreateDirectory(waiterPath);
-            return Path.Combine(waiterPath, ConfigFileName);
-        }
-
-        private void LoadConfig()
+        private async Task LoadConfigAsync()
         {
             try
             {
-                var configPath = GetConfigPath();
-                if (File.Exists(configPath))
+                var serverUrl = await _databaseService.GetSettingAsync(ServerUrlKey);
+                if (!string.IsNullOrWhiteSpace(serverUrl))
                 {
-                    var json = File.ReadAllText(configPath);
-                    var config = JsonSerializer.Deserialize<ConfigData>(json);
-                    if (config != null && !string.IsNullOrWhiteSpace(config.ServerUrl))
-                    {
-                        _serverUrl = config.ServerUrl;
-                    }
+                    _serverUrl = serverUrl;
                 }
             }
             catch
@@ -61,24 +51,16 @@ namespace Waiter.Services
             }
         }
 
-        private void SaveConfig()
+        private async Task SaveConfigAsync()
         {
             try
             {
-                var configPath = GetConfigPath();
-                var config = new ConfigData { ServerUrl = _serverUrl };
-                var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-                File.WriteAllText(configPath, json);
+                await _databaseService.SetSettingAsync(ServerUrlKey, _serverUrl);
             }
             catch
             {
                 // Ignore save errors
             }
-        }
-
-        private class ConfigData
-        {
-            public string ServerUrl { get; set; } = string.Empty;
         }
     }
 }

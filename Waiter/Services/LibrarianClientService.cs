@@ -2,7 +2,7 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
-using TuiHub.Protos.Librarian.Sephirah.V1.Sephirah;
+using TuiHub.Protos.Librarian.Sephirah.V1;
 using Waiter.Interceptors;
 
 namespace Waiter.Services
@@ -135,7 +135,7 @@ namespace Waiter.Services
                 Password = password
             };
             var response = await client.GetTokenAsync(request);
-            _tokenService.SetTokens(response.AccessToken, response.RefreshToken);
+            await _tokenService.SetTokensWithUsernameAsync(username, response.AccessToken, response.RefreshToken);
             return (response.AccessToken, response.RefreshToken);
         }
 
@@ -254,12 +254,20 @@ namespace Waiter.Services
             }
         }
 
-        // Note: DeleteApp API is not available in the current proto version
-        // This is left as a placeholder for future implementation
-        public Task<bool> DeleteAppAsync(TuiHub.Protos.Librarian.V1.InternalID id)
+        public async Task<bool> DeleteAppAsync(TuiHub.Protos.Librarian.V1.InternalID id)
         {
-            _logger.LogWarning("DeleteApp API is not available in the current proto version");
-            return Task.FromResult(false);
+            try
+            {
+                var client = GetAuthenticatedClient();
+                var request = new DeleteAppRequest { Id = id };
+                await client.DeleteAppAsync(request);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete app");
+                return false;
+            }
         }
 
         public async Task<SearchStoreAppsResponse?> SearchStoreAppsAsync(string nameLike, int pageSize = 10, int pageNum = 1)

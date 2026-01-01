@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Waiter.Services;
 using Waiter.Forms;
 using Waiter.Interceptors;
+using Waiter.Data;
 
 namespace Waiter;
 
@@ -23,6 +24,9 @@ static class Program
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
+                // Database service
+                services.AddSingleton<DatabaseService>();
+
                 // Core services
                 services.AddSingleton<ConfigService>();
                 services.AddSingleton<TokenService>();
@@ -46,6 +50,10 @@ static class Program
                 services.AddTransient<BackgroundTasksForm>();
             })
             .Build();
+
+        // Initialize database
+        var dbService = _host.Services.GetRequiredService<DatabaseService>();
+        dbService.InitializeAsync().GetAwaiter().GetResult();
 
         // Get the main form from DI container
         var mainForm = _host.Services.GetRequiredService<MainForm>();

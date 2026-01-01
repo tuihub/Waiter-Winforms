@@ -1,6 +1,6 @@
 using Waiter.Services;
 using Waiter.Helpers;
-using TuiHub.Protos.Librarian.Sephirah.V1.Sephirah;
+using TuiHub.Protos.Librarian.Sephirah.V1;
 
 namespace Waiter.Forms
 {
