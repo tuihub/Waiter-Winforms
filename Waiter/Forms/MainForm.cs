@@ -80,6 +80,7 @@ namespace Waiter.Forms
             // File Menu
             var fileMenu = new ToolStripMenuItem("File");
             fileMenu.DropDownItems.Add("Settings", null, (s, e) => OpenSettings());
+            fileMenu.DropDownItems.Add("Storage Capacity", null, (s, e) => OpenStorageCapacity());
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             fileMenu.DropDownItems.Add("Exit", null, (s, e) => Application.Exit());
             _menuStrip.Items.Add(fileMenu);
@@ -88,6 +89,9 @@ namespace Waiter.Forms
             var viewMenu = new ToolStripMenuItem("View");
             viewMenu.DropDownItems.Add("Refresh Apps", null, async (s, e) => await LoadAppsAsync());
             viewMenu.DropDownItems.Add("Background Tasks", null, (s, e) => OpenBackgroundTasks());
+            viewMenu.DropDownItems.Add(new ToolStripSeparator());
+            viewMenu.DropDownItems.Add("Feed Manager", null, (s, e) => OpenFeedManager());
+            viewMenu.DropDownItems.Add("Notifications", null, (s, e) => OpenNotifications());
             _menuStrip.Items.Add(viewMenu);
 
             // Apps Menu
@@ -100,6 +104,8 @@ namespace Waiter.Forms
 
             // Account Menu
             var accountMenu = new ToolStripMenuItem("Account");
+            accountMenu.DropDownItems.Add("Profile", null, (s, e) => OpenProfile());
+            accountMenu.DropDownItems.Add(new ToolStripSeparator());
             accountMenu.DropDownItems.Add("Login", null, (s, e) => ShowLogin());
             accountMenu.DropDownItems.Add("Logout", null, (s, e) => Logout());
             _menuStrip.Items.Add(accountMenu);
@@ -410,7 +416,21 @@ namespace Waiter.Forms
         {
             if (_selectedApp != null)
             {
-                BtnLaunch_Click(sender, e);
+                OpenAppDetails();
+            }
+        }
+
+        private void OpenAppDetails()
+        {
+            if (_selectedApp == null) return;
+
+            using var appDetailForm = new AppDetailForm(_clientService, _selectedApp);
+            if (appDetailForm.ShowDialog(this) == DialogResult.OK)
+            {
+                if (appDetailForm.IsDeleted || appDetailForm.ResultApp != null)
+                {
+                    _ = LoadAppsAsync();
+                }
             }
         }
 
@@ -574,11 +594,8 @@ namespace Waiter.Forms
 
         private void OpenStore()
         {
-            MessageBox.Show(
-                "Store functionality is not fully implemented yet.\nThis is a placeholder for the app store feature.",
-                "Store",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            using var storeForm = new StoreForm(_clientService);
+            WindowHelper.ShowCenteredDialog(storeForm, this);
         }
 
         private void OpenCategories()
@@ -589,11 +606,35 @@ namespace Waiter.Forms
 
         private void OpenAddApp()
         {
-            MessageBox.Show(
-                "Add App functionality is not fully implemented yet.\nThis is a placeholder for adding new apps.",
-                "Add App",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            using var appDetailForm = new AppDetailForm(_clientService);
+            if (appDetailForm.ShowDialog(this) == DialogResult.OK && appDetailForm.ResultApp != null)
+            {
+                _ = LoadAppsAsync();
+            }
+        }
+
+        private void OpenProfile()
+        {
+            using var profileForm = new UserProfileForm(_clientService, _tokenService);
+            WindowHelper.ShowCenteredDialog(profileForm, this);
+        }
+
+        private void OpenFeedManager()
+        {
+            using var feedForm = new FeedForm(_clientService);
+            WindowHelper.ShowCenteredDialog(feedForm, this);
+        }
+
+        private void OpenNotifications()
+        {
+            using var notificationForm = new NotificationForm(_clientService);
+            WindowHelper.ShowCenteredDialog(notificationForm, this);
+        }
+
+        private void OpenStorageCapacity()
+        {
+            using var storageForm = new StorageCapacityForm(_clientService);
+            WindowHelper.ShowCenteredDialog(storageForm, this);
         }
 
         private void ShowAbout()
