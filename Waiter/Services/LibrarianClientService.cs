@@ -11,14 +11,17 @@ namespace Waiter.Services
     /// Main client service for communicating with the Librarian server.
     /// Provides access to all Sephirah services.
     /// </summary>
-    public class LibrarianClientService
+    public class LibrarianClientService : IDisposable
     {
         private readonly ILogger<LibrarianClientService> _logger;
         private readonly TokenService _tokenService;
         private readonly ConfigService _configService;
         private readonly ILoggerFactory _loggerFactory;
         private GrpcChannel? _channel;
+        private GrpcChannel? _anonymousChannel;
+        private GrpcChannel? _downloadChannel;
         private CallInvoker? _callInvoker;
+        private bool _disposed;
 
         public LibrarianClientService(
             ILogger<LibrarianClientService> logger,
@@ -32,18 +35,25 @@ namespace Waiter.Services
             _loggerFactory = loggerFactory;
 
             _configService.ConfigChanged += OnConfigChanged;
-            InitializeChannel();
+            InitializeChannels();
         }
 
         private void OnConfigChanged(object? sender, EventArgs e)
         {
-            InitializeChannel();
+            InitializeChannels();
         }
 
-        private void InitializeChannel()
+        private void InitializeChannels()
         {
+            // Dispose old channels
             _channel?.Dispose();
+            _anonymousChannel?.Dispose();
+            _downloadChannel?.Dispose();
+
+            // Create new channels
             _channel = GrpcChannel.ForAddress(_configService.ServerUrl);
+            _anonymousChannel = GrpcChannel.ForAddress(_configService.ServerUrl);
+            _downloadChannel = GrpcChannel.ForAddress(_configService.ServerUrl);
 
             var interceptor = new ClientTokenInterceptor(
                 _loggerFactory.CreateLogger<ClientTokenInterceptor>(),
@@ -55,10 +65,15 @@ namespace Waiter.Services
 
         /// <summary>
         /// Gets a client without token interceptor for login operations.
+        /// Uses a reusable channel to avoid resource leaks.
         /// </summary>
         public LibrarianSephirahService.LibrarianSephirahServiceClient GetAnonymousClient()
         {
-            return new LibrarianSephirahService.LibrarianSephirahServiceClient(GrpcChannel.ForAddress(_configService.ServerUrl));
+            if (_anonymousChannel == null)
+            {
+                InitializeChannels();
+            }
+            return new LibrarianSephirahService.LibrarianSephirahServiceClient(_anonymousChannel);
         }
 
         /// <summary>
@@ -68,19 +83,44 @@ namespace Waiter.Services
         {
             if (_callInvoker == null)
             {
-                InitializeChannel();
+                InitializeChannels();
             }
             return new LibrarianSephirahService.LibrarianSephirahServiceClient(_callInvoker);
         }
 
         /// <summary>
         /// Gets a client with download token for file download operations.
+        /// Uses a reusable channel to avoid resource leaks.
         /// </summary>
         public LibrarianSephirahService.LibrarianSephirahServiceClient GetDownloadClient()
         {
-            var channel = GrpcChannel.ForAddress(_configService.ServerUrl);
+            if (_downloadChannel == null)
+            {
+                InitializeChannels();
+            }
             var interceptor = new DownloadTokenInterceptor(_tokenService);
-            return new LibrarianSephirahService.LibrarianSephirahServiceClient(channel.Intercept(interceptor));
+            return new LibrarianSephirahService.LibrarianSephirahServiceClient(_downloadChannel!.Intercept(interceptor));
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _configService.ConfigChanged -= OnConfigChanged;
+                    _channel?.Dispose();
+                    _anonymousChannel?.Dispose();
+                    _downloadChannel?.Dispose();
+                }
+                _disposed = true;
+            }
         }
 
         #region Tiphereth - Authentication and User Management

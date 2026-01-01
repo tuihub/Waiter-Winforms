@@ -38,7 +38,9 @@ namespace Waiter.Interceptors
                 if (string.IsNullOrWhiteSpace(_tokenService.AccessToken))
                 {
                     _logger.LogWarning("No access token found, refreshing token");
-                    var tokens = RefreshTokenAsync(_tokenService.RefreshToken, ct).Result;
+                    // Note: We must use synchronous wait here because AsyncUnaryCall doesn't support async/await.
+                    // GetAwaiter().GetResult() is preferred over .Result as it unwraps exceptions properly.
+                    var tokens = RefreshTokenAsync(_tokenService.RefreshToken, ct).GetAwaiter().GetResult();
                     _tokenService.SetTokens(tokens.accessToken, tokens.refreshToken);
                 }
 
@@ -48,7 +50,8 @@ namespace Waiter.Interceptors
             {
                 _logger.LogInformation("Received unauthenticated error, refreshing token and retrying");
 
-                var tokens = RefreshTokenAsync(_tokenService.RefreshToken, ct).Result;
+                // Note: We must use synchronous wait here because AsyncUnaryCall doesn't support async/await.
+                var tokens = RefreshTokenAsync(_tokenService.RefreshToken, ct).GetAwaiter().GetResult();
                 _tokenService.SetTokens(tokens.accessToken, tokens.refreshToken);
 
                 return ContinueWithAccessToken(request, context, continuation);

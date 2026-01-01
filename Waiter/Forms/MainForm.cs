@@ -462,18 +462,27 @@ namespace Waiter.Forms
 
                 _taskService.StartTask(taskId);
 
-                // Simulate some progress
-                Task.Run(async () =>
-                {
-                    for (int i = 0; i <= 100; i += 10)
-                    {
-                        await Task.Delay(500);
-                        _taskService.UpdateTaskProgress(taskId, i, $"Downloading... {i}%");
-                    }
-                    _taskService.CompleteTask(taskId);
-                });
+                // Simulate some progress (stub implementation with proper exception handling)
+                _ = SimulateDownloadAsync(taskId);
 
                 _statusLabel.Text = $"Started download for '{_selectedApp.Name}'";
+            }
+        }
+
+        private async Task SimulateDownloadAsync(string taskId)
+        {
+            try
+            {
+                for (int i = 0; i <= 100; i += 10)
+                {
+                    await Task.Delay(500).ConfigureAwait(false);
+                    _taskService.UpdateTaskProgress(taskId, i, $"Downloading... {i}%");
+                }
+                _taskService.CompleteTask(taskId);
+            }
+            catch (Exception ex)
+            {
+                _taskService.FailTask(taskId, ex.Message);
             }
         }
 
@@ -489,15 +498,24 @@ namespace Waiter.Forms
 
                 _taskService.StartTask(taskId);
 
-                // Simulate completion
-                Task.Run(async () =>
-                {
-                    await Task.Delay(2000);
-                    _taskService.UpdateTaskProgress(taskId, 100, "Sync complete");
-                    _taskService.CompleteTask(taskId);
-                });
+                // Simulate completion (stub implementation with proper exception handling)
+                _ = SimulateSyncSaveAsync(taskId);
 
                 _statusLabel.Text = $"Started save sync for '{_selectedApp.Name}'";
+            }
+        }
+
+        private async Task SimulateSyncSaveAsync(string taskId)
+        {
+            try
+            {
+                await Task.Delay(2000).ConfigureAwait(false);
+                _taskService.UpdateTaskProgress(taskId, 100, "Sync complete");
+                _taskService.CompleteTask(taskId);
+            }
+            catch (Exception ex)
+            {
+                _taskService.FailTask(taskId, ex.Message);
             }
         }
 

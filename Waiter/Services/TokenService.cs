@@ -46,6 +46,10 @@ namespace Waiter.Services
 
         public bool IsLoggedIn => !string.IsNullOrWhiteSpace(AccessToken);
 
+        /// <summary>
+        /// Sets both access and refresh tokens atomically.
+        /// Fires TokensChanged event only once for both tokens.
+        /// </summary>
         public void SetTokens(string accessToken, string refreshToken)
         {
             _accessToken = accessToken;
@@ -58,6 +62,10 @@ namespace Waiter.Services
             DownloadToken = downloadToken;
         }
 
+        /// <summary>
+        /// Clears all tokens (access, refresh, and download).
+        /// Fires TokensChanged event once after clearing all tokens.
+        /// </summary>
         public void ClearTokens()
         {
             _accessToken = string.Empty;
