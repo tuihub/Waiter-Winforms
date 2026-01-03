@@ -14,26 +14,9 @@ namespace Waiter.Forms
         private readonly ConfigService _configService;
         private readonly BackgroundTaskService _taskService;
 
-        // UI Components
-        private MenuStrip _menuStrip = null!;
-        private SplitContainer _mainSplitContainer = null!;
-        private ListView _appListView = null!;
-        private Panel _detailPanel = null!;
-        private StatusStrip _statusStrip = null!;
-        private ToolStripStatusLabel _statusLabel = null!;
-        private ToolStripStatusLabel _userLabel = null!;
-        private ToolStripStatusLabel _taskLabel = null!;
-
-        // Detail panel components
-        private Label _lblAppName = null!;
-        private Label _lblAppDescription = null!;
-        private Button _btnLaunch = null!;
-        private Button _btnDownload = null!;
-        private Button _btnSyncSave = null!;
-        private PictureBox _appCoverImage = null!;
-
         private List<App> _apps = new();
         private App? _selectedApp;
+        private ImageList? _appImageList;
 
         public MainForm(
             LibrarianClientService clientService,
@@ -48,257 +31,30 @@ namespace Waiter.Forms
 
             InitializeComponent();
 
+            // Setup ImageList for app list
+            _appImageList = new ImageList { ImageSize = new Size(64, 64), ColorDepth = ColorDepth.Depth32Bit };
+            _appListView.LargeImageList = _appImageList;
+
             _tokenService.TokensChanged += OnTokensChanged;
             _taskService.TaskAdded += OnTasksChanged;
             _taskService.TaskCompleted += OnTasksChanged;
         }
 
-        private void InitializeComponent()
-        {
-            this.Text = "TuiHub Waiter";
-            this.Size = new Size(1200, 700);
-            this.MinimumSize = new Size(800, 500);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.BackColor = Color.FromArgb(27, 40, 56); // Steam-like dark blue
-
-            CreateMenuStrip();
-            CreateMainLayout();
-            CreateStatusStrip();
-
-            this.Load += MainForm_Load;
-            this.FormClosing += MainForm_FormClosing;
-        }
-
-        private void CreateMenuStrip()
-        {
-            _menuStrip = new MenuStrip
-            {
-                BackColor = Color.FromArgb(23, 29, 37),
-                ForeColor = Color.White
-            };
-
-            // File Menu
-            var fileMenu = new ToolStripMenuItem("File");
-            fileMenu.DropDownItems.Add("Settings", null, (s, e) => OpenSettings());
-            fileMenu.DropDownItems.Add("Storage Capacity", null, (s, e) => OpenStorageCapacity());
-            fileMenu.DropDownItems.Add(new ToolStripSeparator());
-            fileMenu.DropDownItems.Add("Exit", null, (s, e) => Application.Exit());
-            _menuStrip.Items.Add(fileMenu);
-
-            // View Menu
-            var viewMenu = new ToolStripMenuItem("View");
-            viewMenu.DropDownItems.Add("Refresh Apps", null, async (s, e) => await LoadAppsAsync());
-            viewMenu.DropDownItems.Add("Background Tasks", null, (s, e) => OpenBackgroundTasks());
-            viewMenu.DropDownItems.Add(new ToolStripSeparator());
-            viewMenu.DropDownItems.Add("Feed Manager", null, (s, e) => OpenFeedManager());
-            viewMenu.DropDownItems.Add("Notifications", null, (s, e) => OpenNotifications());
-            _menuStrip.Items.Add(viewMenu);
-
-            // Apps Menu
-            var appsMenu = new ToolStripMenuItem("Apps");
-            appsMenu.DropDownItems.Add("Store", null, (s, e) => OpenStore());
-            appsMenu.DropDownItems.Add("Categories", null, (s, e) => OpenCategories());
-            appsMenu.DropDownItems.Add(new ToolStripSeparator());
-            appsMenu.DropDownItems.Add("Add App...", null, (s, e) => OpenAddApp());
-            _menuStrip.Items.Add(appsMenu);
-
-            // Account Menu
-            var accountMenu = new ToolStripMenuItem("Account");
-            accountMenu.DropDownItems.Add("Profile", null, (s, e) => OpenProfile());
-            accountMenu.DropDownItems.Add(new ToolStripSeparator());
-            accountMenu.DropDownItems.Add("Login", null, (s, e) => ShowLogin());
-            accountMenu.DropDownItems.Add("Logout", null, (s, e) => Logout());
-            _menuStrip.Items.Add(accountMenu);
-
-            // Help Menu
-            var helpMenu = new ToolStripMenuItem("Help");
-            helpMenu.DropDownItems.Add("About", null, (s, e) => ShowAbout());
-            _menuStrip.Items.Add(helpMenu);
-
-            this.MainMenuStrip = _menuStrip;
-            this.Controls.Add(_menuStrip);
-        }
-
-        private void CreateMainLayout()
-        {
-            _mainSplitContainer = new SplitContainer
-            {
-                Dock = DockStyle.Fill,
-                SplitterDistance = 300,
-                BackColor = Color.FromArgb(27, 40, 56),
-                Panel1MinSize = 200,
-                Panel2MinSize = 400
-            };
-            _mainSplitContainer.Panel1.BackColor = Color.FromArgb(27, 40, 56);
-            _mainSplitContainer.Panel2.BackColor = Color.FromArgb(27, 40, 56);
-
-            // Left Panel - App List
-            CreateAppListPanel();
-
-            // Right Panel - App Details
-            CreateDetailPanel();
-
-            this.Controls.Add(_mainSplitContainer);
-        }
-
-        private void CreateAppListPanel()
-        {
-            var headerPanel = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 50,
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            var lblLibrary = new Label
-            {
-                Text = "LIBRARY",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(15, 15),
-                AutoSize = true
-            };
-            headerPanel.Controls.Add(lblLibrary);
-
-            _appListView = new ListView
-            {
-                Dock = DockStyle.Fill,
-                View = View.LargeIcon,
-                BackColor = Color.FromArgb(27, 40, 56),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                LargeImageList = new ImageList { ImageSize = new Size(64, 64), ColorDepth = ColorDepth.Depth32Bit }
-            };
-            _appListView.SelectedIndexChanged += AppListView_SelectedIndexChanged;
-            _appListView.DoubleClick += AppListView_DoubleClick;
-
-            _mainSplitContainer.Panel1.Controls.Add(_appListView);
-            _mainSplitContainer.Panel1.Controls.Add(headerPanel);
-        }
-
-        private void CreateDetailPanel()
-        {
-            _detailPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(27, 40, 56)
-            };
-
-            // App Cover Image
-            _appCoverImage = new PictureBox
-            {
-                Location = new Point(20, 20),
-                Size = new Size(200, 280),
-                BackColor = Color.FromArgb(45, 60, 80),
-                SizeMode = PictureBoxSizeMode.Zoom
-            };
-            _detailPanel.Controls.Add(_appCoverImage);
-
-            // App Name
-            _lblAppName = new Label
-            {
-                Text = "Select an app",
-                Font = new Font("Segoe UI", 24, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(240, 20),
-                Size = new Size(500, 40),
-                AutoEllipsis = true
-            };
-            _detailPanel.Controls.Add(_lblAppName);
-
-            // App Description
-            _lblAppDescription = new Label
-            {
-                Text = "Select an app from your library to see details",
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.LightGray,
-                Location = new Point(240, 70),
-                Size = new Size(500, 100)
-            };
-            _detailPanel.Controls.Add(_lblAppDescription);
-
-            // Action Buttons
-            _btnLaunch = new Button
-            {
-                Text = "LAUNCH",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                Location = new Point(240, 180),
-                Size = new Size(120, 40),
-                BackColor = Color.FromArgb(76, 175, 80),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Enabled = false
-            };
-            _btnLaunch.Click += BtnLaunch_Click;
-            _detailPanel.Controls.Add(_btnLaunch);
-
-            _btnDownload = new Button
-            {
-                Text = "Download",
-                Location = new Point(370, 180),
-                Size = new Size(100, 40),
-                BackColor = Color.FromArgb(0, 120, 215),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Enabled = false
-            };
-            _btnDownload.Click += BtnDownload_Click;
-            _detailPanel.Controls.Add(_btnDownload);
-
-            _btnSyncSave = new Button
-            {
-                Text = "Sync Save",
-                Location = new Point(480, 180),
-                Size = new Size(100, 40),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Enabled = false
-            };
-            _btnSyncSave.Click += BtnSyncSave_Click;
-            _detailPanel.Controls.Add(_btnSyncSave);
-
-            _mainSplitContainer.Panel2.Controls.Add(_detailPanel);
-        }
-
-        private void CreateStatusStrip()
-        {
-            _statusStrip = new StatusStrip
-            {
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            _statusLabel = new ToolStripStatusLabel
-            {
-                Text = "Ready",
-                ForeColor = Color.LightGray,
-                Spring = true,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-
-            _taskLabel = new ToolStripStatusLabel
-            {
-                Text = "Tasks: 0",
-                ForeColor = Color.LightGray,
-                BorderSides = ToolStripStatusLabelBorderSides.Left,
-                BorderStyle = Border3DStyle.Etched
-            };
-            _taskLabel.Click += (s, e) => OpenBackgroundTasks();
-
-            _userLabel = new ToolStripStatusLabel
-            {
-                Text = "Not logged in",
-                ForeColor = Color.LightGray,
-                BorderSides = ToolStripStatusLabelBorderSides.Left,
-                BorderStyle = Border3DStyle.Etched
-            };
-
-            _statusStrip.Items.Add(_statusLabel);
-            _statusStrip.Items.Add(_taskLabel);
-            _statusStrip.Items.Add(_userLabel);
-
-            this.Controls.Add(_statusStrip);
-        }
+        // Menu event handlers
+        private void SettingsToolStripMenuItem_Click(object? sender, EventArgs e) => OpenSettings();
+        private void StorageCapacityToolStripMenuItem_Click(object? sender, EventArgs e) => OpenStorageCapacity();
+        private void ExitToolStripMenuItem_Click(object? sender, EventArgs e) => Application.Exit();
+        private async void RefreshAppsToolStripMenuItem_Click(object? sender, EventArgs e) => await LoadAppsAsync();
+        private void BackgroundTasksToolStripMenuItem_Click(object? sender, EventArgs e) => OpenBackgroundTasks();
+        private void FeedManagerToolStripMenuItem_Click(object? sender, EventArgs e) => OpenFeedManager();
+        private void NotificationsToolStripMenuItem_Click(object? sender, EventArgs e) => OpenNotifications();
+        private void StoreToolStripMenuItem_Click(object? sender, EventArgs e) => OpenStore();
+        private void CategoriesToolStripMenuItem_Click(object? sender, EventArgs e) => OpenCategories();
+        private void AddAppToolStripMenuItem_Click(object? sender, EventArgs e) => OpenAddApp();
+        private void ProfileToolStripMenuItem_Click(object? sender, EventArgs e) => OpenProfile();
+        private void LoginToolStripMenuItem_Click(object? sender, EventArgs e) => ShowLogin();
+        private void LogoutToolStripMenuItem_Click(object? sender, EventArgs e) => Logout();
+        private void AboutToolStripMenuItem_Click(object? sender, EventArgs e) => ShowAbout();
 
         private async void MainForm_Load(object? sender, EventArgs e)
         {

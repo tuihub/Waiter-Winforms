@@ -13,15 +13,6 @@ namespace Waiter.Forms
         private readonly App? _existingApp;
         private readonly bool _isEditMode;
 
-        // UI Components
-        private TextBox _txtName = null!;
-        private TextBox _txtDescription = null!;
-        private ComboBox _cboType = null!;
-        private TextBox _txtPublisher = null!;
-        private Button _btnSave = null!;
-        private Button _btnCancel = null!;
-        private Button _btnDelete = null!;
-
         public App? ResultApp { get; private set; }
         public bool IsDeleted { get; private set; }
 
@@ -31,166 +22,18 @@ namespace Waiter.Forms
             _existingApp = existingApp;
             _isEditMode = existingApp != null;
             InitializeComponent();
-        }
 
-        private void InitializeComponent()
-        {
+            // Update form title and button text based on mode
             this.Text = _isEditMode ? "Edit App" : "Add New App";
-            this.Size = new Size(550, 380);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(27, 40, 56);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-
-            CreateFormFields();
-            CreateButtonPanel();
-
-            this.Load += AppDetailForm_Load;
-        }
-
-        private void CreateFormFields()
-        {
-            int y = 20;
-            int labelWidth = 100;
-            int inputWidth = 380;
-
-            // Name
-            var lblName = new Label
-            {
-                Text = "Name:",
-                ForeColor = Color.White,
-                Location = new Point(20, y + 3),
-                Size = new Size(labelWidth, 20)
-            };
-            _txtName = new TextBox
-            {
-                Location = new Point(120, y),
-                Size = new Size(inputWidth, 25),
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White
-            };
-            this.Controls.AddRange(new Control[] { lblName, _txtName });
-            y += 40;
-
-            // Type
-            var lblType = new Label
-            {
-                Text = "Type:",
-                ForeColor = Color.White,
-                Location = new Point(20, y + 3),
-                Size = new Size(labelWidth, 20)
-            };
-            _cboType = new ComboBox
-            {
-                Location = new Point(120, y),
-                Size = new Size(200, 25),
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            _cboType.Items.AddRange(new object[] { "Game", "Other" });
+            _btnSave.Text = _isEditMode ? "Save" : "Create";
+            _btnDelete.Visible = _isEditMode;
             _cboType.SelectedIndex = 0;
-            this.Controls.AddRange(new Control[] { lblType, _cboType });
-            y += 40;
-
-            // Publisher
-            var lblPublisher = new Label
-            {
-                Text = "Publisher:",
-                ForeColor = Color.White,
-                Location = new Point(20, y + 3),
-                Size = new Size(labelWidth, 20)
-            };
-            _txtPublisher = new TextBox
-            {
-                Location = new Point(120, y),
-                Size = new Size(inputWidth, 25),
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White
-            };
-            this.Controls.AddRange(new Control[] { lblPublisher, _txtPublisher });
-            y += 40;
-
-            // Description
-            var lblDescription = new Label
-            {
-                Text = "Description:",
-                ForeColor = Color.White,
-                Location = new Point(20, y + 3),
-                Size = new Size(labelWidth, 20)
-            };
-            _txtDescription = new TextBox
-            {
-                Location = new Point(120, y),
-                Size = new Size(inputWidth, 100),
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical
-            };
-            this.Controls.AddRange(new Control[] { lblDescription, _txtDescription });
         }
 
-        private void CreateButtonPanel()
+        private void BtnCancel_Click(object? sender, EventArgs e)
         {
-            var buttonPanel = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 60,
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            // Position buttons relative to button panel, not form
-            _btnSave = new Button
-            {
-                Text = _isEditMode ? "Save" : "Create",
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(76, 175, 80),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Top
-            };
-            _btnSave.Click += BtnSave_Click;
-
-            _btnCancel = new Button
-            {
-                Text = "Cancel",
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Top
-            };
-            _btnCancel.Click += (s, e) => { this.DialogResult = DialogResult.Cancel; this.Close(); };
-
-            if (_isEditMode)
-            {
-                _btnDelete = new Button
-                {
-                    Text = "Delete",
-                    Location = new Point(20, 15),
-                    Size = new Size(100, 35),
-                    BackColor = Color.FromArgb(200, 50, 50),
-                    ForeColor = Color.White,
-                    FlatStyle = FlatStyle.Flat,
-                    Anchor = AnchorStyles.Left | AnchorStyles.Bottom
-                };
-                _btnDelete.Click += BtnDelete_Click;
-                buttonPanel.Controls.Add(_btnDelete);
-            }
-
-            buttonPanel.Controls.AddRange(new Control[] { _btnSave, _btnCancel });
-            this.Controls.Add(buttonPanel);
-
-            // Position buttons after panel is added
-            buttonPanel.SizeChanged += (s, e) =>
-            {
-                _btnCancel.Location = new Point(buttonPanel.Width - 120, 15);
-                _btnSave.Location = new Point(buttonPanel.Width - 230, 15);
-            };
-            // Initial positioning
-            _btnCancel.Location = new Point(buttonPanel.Width - 120, 15);
-            _btnSave.Location = new Point(buttonPanel.Width - 230, 15);
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
         }
 
         private void AppDetailForm_Load(object? sender, EventArgs e)

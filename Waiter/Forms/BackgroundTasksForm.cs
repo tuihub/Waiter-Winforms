@@ -6,11 +6,6 @@ namespace Waiter.Forms
     {
         private readonly BackgroundTaskService _taskService;
 
-        private ListView _listViewTasks = null!;
-        private Button _btnClear = null!;
-        private Button _btnClose = null!;
-        private Label _lblStatus = null!;
-
         public BackgroundTasksForm(BackgroundTaskService taskService)
         {
             _taskService = taskService;
@@ -24,85 +19,17 @@ namespace Waiter.Forms
             _taskService.TaskFailed += OnTaskChanged;
         }
 
-        private void InitializeComponent()
+        private void BtnClose_Click(object? sender, EventArgs e)
         {
-            this.Text = "Background Tasks";
-            this.Size = new Size(700, 400);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.BackColor = Color.FromArgb(30, 30, 30);
+            this.Close();
+        }
 
-            // Title
-            var lblTitle = new Label
-            {
-                Text = "Background Tasks",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 15),
-                AutoSize = true
-            };
-            this.Controls.Add(lblTitle);
-
-            // ListView
-            _listViewTasks = new ListView
-            {
-                Location = new Point(20, 55),
-                Size = new Size(640, 250),
-                View = View.Details,
-                FullRowSelect = true,
-                GridLines = true,
-                BackColor = Color.FromArgb(45, 45, 45),
-                ForeColor = Color.White
-            };
-            _listViewTasks.Columns.Add("Name", 200);
-            _listViewTasks.Columns.Add("Type", 80);
-            _listViewTasks.Columns.Add("Status", 80);
-            _listViewTasks.Columns.Add("Progress", 80);
-            _listViewTasks.Columns.Add("Message", 180);
-            this.Controls.Add(_listViewTasks);
-
-            // Status Label
-            _lblStatus = new Label
-            {
-                Text = "",
-                ForeColor = Color.LightGray,
-                Location = new Point(20, 315),
-                Size = new Size(400, 20)
-            };
-            this.Controls.Add(_lblStatus);
-
-            // Buttons
-            _btnClear = new Button
-            {
-                Text = "Clear Completed",
-                Location = new Point(450, 315),
-                Size = new Size(100, 30),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnClear.Click += BtnClear_Click;
-            this.Controls.Add(_btnClear);
-
-            _btnClose = new Button
-            {
-                Text = "Close",
-                Location = new Point(560, 315),
-                Size = new Size(100, 30),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnClose.Click += (s, e) => this.Close();
-            this.Controls.Add(_btnClose);
-
-            this.FormClosing += (s, e) =>
-            {
-                _taskService.TaskAdded -= OnTaskChanged;
-                _taskService.TaskUpdated -= OnTaskChanged;
-                _taskService.TaskCompleted -= OnTaskChanged;
-                _taskService.TaskFailed -= OnTaskChanged;
-            };
+        private void BackgroundTasksForm_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            _taskService.TaskAdded -= OnTaskChanged;
+            _taskService.TaskUpdated -= OnTaskChanged;
+            _taskService.TaskCompleted -= OnTaskChanged;
+            _taskService.TaskFailed -= OnTaskChanged;
         }
 
         private void LoadTasks()
