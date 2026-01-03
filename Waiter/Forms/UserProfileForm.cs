@@ -11,15 +11,6 @@ namespace Waiter.Forms
         private readonly LibrarianClientService _clientService;
         private readonly TokenService _tokenService;
 
-        // UI Components
-        private Label _lblUsername = null!;
-        private Label _lblUserId = null!;
-        private Label _lblStatus = null!;
-        private ListView _lstSessions = null!;
-        private Button _btnDeleteSession = null!;
-        private Button _btnRefresh = null!;
-        private Button _btnClose = null!;
-
         public UserProfileForm(LibrarianClientService clientService, TokenService tokenService)
         {
             _clientService = clientService;
@@ -27,142 +18,15 @@ namespace Waiter.Forms
             InitializeComponent();
         }
 
-        private void InitializeComponent()
+        private void BtnClose_Click(object? sender, EventArgs e)
         {
-            this.Text = "User Profile";
-            this.Size = new Size(600, 500);
-            this.MinimumSize = new Size(500, 400);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(27, 40, 56);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-
-            CreateProfileSection();
-            CreateSessionsSection();
-            CreateButtonPanel();
-
-            this.Load += UserProfileForm_Load;
+            this.Close();
         }
 
-        private void CreateProfileSection()
+        private async void BtnRefresh_Click(object? sender, EventArgs e)
         {
-            var lblTitle = new Label
-            {
-                Text = "User Information",
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 20),
-                AutoSize = true
-            };
-
-            _lblUsername = new Label
-            {
-                Text = "Username: Loading...",
-                Font = new Font("Segoe UI", 11),
-                ForeColor = Color.LightGray,
-                Location = new Point(20, 55),
-                Size = new Size(400, 25)
-            };
-
-            _lblUserId = new Label
-            {
-                Text = "User ID: Loading...",
-                Font = new Font("Segoe UI", 11),
-                ForeColor = Color.LightGray,
-                Location = new Point(20, 85),
-                Size = new Size(400, 25)
-            };
-
-            _lblStatus = new Label
-            {
-                Text = "Status: Loading...",
-                Font = new Font("Segoe UI", 11),
-                ForeColor = Color.LightGray,
-                Location = new Point(20, 115),
-                Size = new Size(400, 25)
-            };
-
-            this.Controls.AddRange(new Control[] {
-                lblTitle, _lblUsername, _lblUserId, _lblStatus
-            });
-        }
-
-        private void CreateSessionsSection()
-        {
-            var lblSessions = new Label
-            {
-                Text = "Active Sessions",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 160),
-                AutoSize = true
-            };
-
-            _lstSessions = new ListView
-            {
-                Location = new Point(20, 190),
-                Size = new Size(440, 200),
-                View = View.Details,
-                FullRowSelect = true,
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            _lstSessions.Columns.Add("Device", 200);
-            _lstSessions.Columns.Add("Session ID", 200);
-
-            _btnDeleteSession = new Button
-            {
-                Text = "End Session",
-                Location = new Point(470, 190),
-                Size = new Size(100, 30),
-                BackColor = Color.FromArgb(200, 50, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnDeleteSession.Click += BtnDeleteSession_Click;
-
-            _btnRefresh = new Button
-            {
-                Text = "Refresh",
-                Location = new Point(470, 230),
-                Size = new Size(100, 30),
-                BackColor = Color.FromArgb(0, 120, 215),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnRefresh.Click += async (s, e) =>
-            {
-                await LoadUserInfoAsync();
-                await LoadSessionsAsync();
-            };
-
-            this.Controls.AddRange(new Control[] { lblSessions, _lstSessions, _btnDeleteSession, _btnRefresh });
-        }
-
-        private void CreateButtonPanel()
-        {
-            var buttonPanel = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 60,
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            _btnClose = new Button
-            {
-                Text = "Close",
-                Location = new Point(this.Width - 130, 15),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Bottom
-            };
-            _btnClose.Click += (s, e) => this.Close();
-
-            buttonPanel.Controls.Add(_btnClose);
-            this.Controls.Add(buttonPanel);
+            await LoadUserInfoAsync();
+            await LoadSessionsAsync();
         }
 
         private async void UserProfileForm_Load(object? sender, EventArgs e)

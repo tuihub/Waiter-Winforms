@@ -10,193 +10,29 @@ namespace Waiter.Forms
     {
         private readonly LibrarianClientService _clientService;
 
-        // UI Components
-        private TextBox _txtSearch = null!;
-        private Button _btnSearch = null!;
-        private ListView _lstStoreApps = null!;
-        private Panel _detailPanel = null!;
-        private Label _lblAppName = null!;
-        private Label _lblAppDescription = null!;
-        private Button _btnAcquire = null!;
-        private Button _btnClose = null!;
-        private StatusStrip _statusStrip = null!;
-        private ToolStripStatusLabel _statusLabel = null!;
-
         public StoreForm(LibrarianClientService clientService)
         {
             _clientService = clientService;
             InitializeComponent();
         }
 
-        private void InitializeComponent()
+        private void BtnClose_Click(object? sender, EventArgs e)
         {
-            this.Text = "TuiHub Store";
-            this.Size = new Size(900, 550);
-            this.MinimumSize = new Size(700, 450);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(27, 40, 56);
-
-            CreateSearchPanel();
-            CreateMainLayout();
-            CreateStatusStrip();
+            this.Close();
         }
 
-        private void CreateSearchPanel()
+        private void TxtSearch_KeyPress(object? sender, KeyPressEventArgs e)
         {
-            var searchPanel = new Panel
+            if (e.KeyChar == (char)Keys.Enter)
             {
-                Dock = DockStyle.Top,
-                Height = 60,
-                BackColor = Color.FromArgb(23, 29, 37),
-                Padding = new Padding(10)
-            };
-
-            var lblSearch = new Label
-            {
-                Text = "Search Store:",
-                ForeColor = Color.White,
-                Location = new Point(10, 18),
-                AutoSize = true
-            };
-
-            _txtSearch = new TextBox
-            {
-                Location = new Point(100, 15),
-                Size = new Size(300, 25),
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White
-            };
-            _txtSearch.KeyPress += (s, e) =>
-            {
-                if (e.KeyChar == (char)Keys.Enter)
-                {
-                    _ = SearchAppsAsync();
-                    e.Handled = true;
-                }
-            };
-
-            _btnSearch = new Button
-            {
-                Text = "Search",
-                Location = new Point(410, 13),
-                Size = new Size(80, 28),
-                BackColor = Color.FromArgb(0, 120, 215),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnSearch.Click += async (s, e) => await SearchAppsAsync();
-
-            searchPanel.Controls.AddRange(new Control[] { lblSearch, _txtSearch, _btnSearch });
-            this.Controls.Add(searchPanel);
+                _ = SearchAppsAsync();
+                e.Handled = true;
+            }
         }
 
-        private void CreateMainLayout()
+        private async void BtnSearch_Click(object? sender, EventArgs e)
         {
-            var splitContainer = new SplitContainer
-            {
-                Dock = DockStyle.Fill,
-                SplitterDistance = 400,
-                BackColor = Color.FromArgb(27, 40, 56),
-                Panel1MinSize = 200,
-                Panel2MinSize = 250
-            };
-            splitContainer.Panel1.BackColor = Color.FromArgb(27, 40, 56);
-            splitContainer.Panel2.BackColor = Color.FromArgb(27, 40, 56);
-
-            // Left Panel - Store App List
-            _lstStoreApps = new ListView
-            {
-                Dock = DockStyle.Fill,
-                View = View.Details,
-                FullRowSelect = true,
-                BackColor = Color.FromArgb(27, 40, 56),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.None
-            };
-            _lstStoreApps.Columns.Add("App Name", 350);
-            _lstStoreApps.SelectedIndexChanged += LstStoreApps_SelectedIndexChanged;
-            splitContainer.Panel1.Controls.Add(_lstStoreApps);
-
-            // Right Panel - App Details
-            CreateDetailPanel();
-            splitContainer.Panel2.Controls.Add(_detailPanel);
-
-            this.Controls.Add(splitContainer);
-        }
-
-        private void CreateDetailPanel()
-        {
-            _detailPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(27, 40, 56),
-                Padding = new Padding(20)
-            };
-
-            _lblAppName = new Label
-            {
-                Text = "Select an app",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 20),
-                Size = new Size(350, 30),
-                AutoEllipsis = true
-            };
-
-            _lblAppDescription = new Label
-            {
-                Text = "Select an app from the store to see details and acquire it.",
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.LightGray,
-                Location = new Point(20, 60),
-                Size = new Size(350, 120)
-            };
-
-            _btnAcquire = new Button
-            {
-                Text = "Acquire App",
-                Location = new Point(20, 200),
-                Size = new Size(130, 35),
-                BackColor = Color.FromArgb(76, 175, 80),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Enabled = false
-            };
-            _btnAcquire.Click += BtnAcquire_Click;
-
-            _btnClose = new Button
-            {
-                Text = "Close",
-                Location = new Point(160, 200),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnClose.Click += (s, e) => this.Close();
-
-            _detailPanel.Controls.AddRange(new Control[] {
-                _lblAppName, _lblAppDescription, _btnAcquire, _btnClose
-            });
-        }
-
-        private void CreateStatusStrip()
-        {
-            _statusStrip = new StatusStrip
-            {
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            _statusLabel = new ToolStripStatusLabel
-            {
-                Text = "Enter a search term to find apps in the store",
-                ForeColor = Color.LightGray,
-                Spring = true,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-
-            _statusStrip.Items.Add(_statusLabel);
-            this.Controls.Add(_statusStrip);
+            await SearchAppsAsync();
         }
 
         private async Task SearchAppsAsync()

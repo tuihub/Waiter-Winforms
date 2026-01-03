@@ -10,201 +10,21 @@ namespace Waiter.Forms
     {
         private readonly LibrarianClientService _clientService;
 
-        // UI Components
-        private ListView _lstFeedConfigs = null!;
-        private ListView _lstFeedItems = null!;
-        private Button _btnAddConfig = null!;
-        private Button _btnRefresh = null!;
-        private Button _btnClose = null!;
-        private RichTextBox _txtFeedContent = null!;
-        private StatusStrip _statusStrip = null!;
-        private ToolStripStatusLabel _statusLabel = null!;
-
         public FeedForm(LibrarianClientService clientService)
         {
             _clientService = clientService;
             InitializeComponent();
         }
 
-        private void InitializeComponent()
+        private void BtnClose_Click(object? sender, EventArgs e)
         {
-            this.Text = "Feed Manager";
-            this.Size = new Size(900, 600);
-            this.MinimumSize = new Size(700, 500);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(27, 40, 56);
-
-            CreateMainLayout();
-            CreateStatusStrip();
-            CreateButtonPanel();
-
-            this.Load += FeedForm_Load;
+            this.Close();
         }
 
-        private void CreateMainLayout()
+        private async void BtnRefresh_Click(object? sender, EventArgs e)
         {
-            var mainSplit = new SplitContainer
-            {
-                Dock = DockStyle.Fill,
-                Orientation = Orientation.Horizontal,
-                SplitterDistance = 200,
-                BackColor = Color.FromArgb(27, 40, 56)
-            };
-            mainSplit.Panel1.BackColor = Color.FromArgb(27, 40, 56);
-            mainSplit.Panel2.BackColor = Color.FromArgb(27, 40, 56);
-
-            // Top - Feed Sources
-            var lblConfigs = new Label
-            {
-                Text = "Feed Sources",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                ForeColor = Color.White,
-                Dock = DockStyle.Top,
-                Height = 30
-            };
-
-            _lstFeedConfigs = new ListView
-            {
-                Dock = DockStyle.Fill,
-                View = View.Details,
-                FullRowSelect = true,
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            _lstFeedConfigs.Columns.Add("Name", 300);
-            _lstFeedConfigs.Columns.Add("Status", 100);
-
-            mainSplit.Panel1.Controls.Add(_lstFeedConfigs);
-            mainSplit.Panel1.Controls.Add(lblConfigs);
-
-            // Bottom - Feed Items and Content
-            var bottomSplit = new SplitContainer
-            {
-                Dock = DockStyle.Fill,
-                Orientation = Orientation.Horizontal,
-                SplitterDistance = 200,
-                BackColor = Color.FromArgb(27, 40, 56)
-            };
-            bottomSplit.Panel1.BackColor = Color.FromArgb(27, 40, 56);
-            bottomSplit.Panel2.BackColor = Color.FromArgb(27, 40, 56);
-
-            var lblItems = new Label
-            {
-                Text = "Feed Items",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                ForeColor = Color.White,
-                Dock = DockStyle.Top,
-                Height = 30
-            };
-
-            _lstFeedItems = new ListView
-            {
-                Dock = DockStyle.Fill,
-                View = View.Details,
-                FullRowSelect = true,
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle
-            };
-            _lstFeedItems.Columns.Add("Title", 400);
-            _lstFeedItems.Columns.Add("Published", 150);
-            _lstFeedItems.SelectedIndexChanged += LstFeedItems_SelectedIndexChanged;
-
-            bottomSplit.Panel1.Controls.Add(_lstFeedItems);
-            bottomSplit.Panel1.Controls.Add(lblItems);
-
-            // Content Preview
-            _txtFeedContent = new RichTextBox
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(45, 60, 80),
-                ForeColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                ReadOnly = true,
-                Font = new Font("Segoe UI", 10)
-            };
-            bottomSplit.Panel2.Controls.Add(_txtFeedContent);
-
-            mainSplit.Panel2.Controls.Add(bottomSplit);
-
-            var contentPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                Padding = new Padding(10, 10, 10, 80)
-            };
-            contentPanel.Controls.Add(mainSplit);
-            this.Controls.Add(contentPanel);
-        }
-
-        private void CreateStatusStrip()
-        {
-            _statusStrip = new StatusStrip
-            {
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            _statusLabel = new ToolStripStatusLabel
-            {
-                Text = "Ready",
-                ForeColor = Color.LightGray,
-                Spring = true,
-                TextAlign = ContentAlignment.MiddleLeft
-            };
-
-            _statusStrip.Items.Add(_statusLabel);
-            this.Controls.Add(_statusStrip);
-        }
-
-        private void CreateButtonPanel()
-        {
-            var buttonPanel = new Panel
-            {
-                Dock = DockStyle.Bottom,
-                Height = 60,
-                BackColor = Color.FromArgb(23, 29, 37)
-            };
-
-            _btnAddConfig = new Button
-            {
-                Text = "Add Source",
-                Location = new Point(20, 15),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(0, 120, 215),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnAddConfig.Click += BtnAddConfig_Click;
-
-            _btnRefresh = new Button
-            {
-                Text = "Refresh",
-                Location = new Point(130, 15),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            _btnRefresh.Click += async (s, e) =>
-            {
-                await LoadFeedConfigsAsync();
-                await LoadFeedItemsAsync();
-            };
-
-            _btnClose = new Button
-            {
-                Text = "Close",
-                Location = new Point(this.Width - 130, 15),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(60, 60, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Anchor = AnchorStyles.Right | AnchorStyles.Bottom
-            };
-            _btnClose.Click += (s, e) => this.Close();
-
-            buttonPanel.Controls.AddRange(new Control[] { _btnAddConfig, _btnRefresh, _btnClose });
-            this.Controls.Add(buttonPanel);
+            await LoadFeedConfigsAsync();
+            await LoadFeedItemsAsync();
         }
 
         private async void FeedForm_Load(object? sender, EventArgs e)
