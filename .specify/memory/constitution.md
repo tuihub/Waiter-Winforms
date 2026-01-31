@@ -2,11 +2,11 @@
 ================================================================================
 SYNC IMPACT REPORT
 ================================================================================
-Version change: 0.1.0 → 0.1.1 (Clarify communication contract requirements)
+Version change: 0.1.1 → 0.2.0 (Add Visual Studio Designer compatibility requirement)
 Modified principles:
-  - III. gRPC Client Discipline (clarified scope and presigned URL exception)
-Added sections:
   - None
+Added sections:
+  - VI. Visual Studio Designer Compatibility (new principle)
 Removed sections: N/A
 Templates requiring updates:
   - plan-template.md: ✅ No changes needed (generic template compatible)
@@ -81,6 +81,20 @@ Features MUST be implemented with the simplest viable solution; complexity requi
 
 **Rationale**: The project is a client application; over-engineering increases maintenance burden without proportional benefit.
 
+### VI. Visual Studio Designer Compatibility
+
+All WinForms Forms and UserControls MUST remain compatible with the Visual Studio Designer.
+
+- Forms MUST maintain the standard partial class pattern with separate `*.Designer.cs` files
+- The `InitializeComponent()` method MUST NOT be modified manually; it is managed by the Designer
+- Designer-generated code in `*.Designer.cs` files MUST NOT be manually edited except through the Designer
+- Custom controls MUST support design-time experience where feasible (provide default constructors)
+- Constructor dependencies (DI) MUST be resolved after `InitializeComponent()` completes
+- Forms MUST NOT use constructor parameters that prevent Designer instantiation; use property injection or `SetDependencies()` methods when DI is needed after construction
+- Resource files (`*.resx`) MUST be managed through the Designer, not edited manually
+
+**Rationale**: Visual Studio Designer is essential for rapid UI development and maintenance of WinForms applications; breaking Designer compatibility forces error-prone manual editing of layout code.
+
 ## Technical Constraints
 
 The following technology stack and constraints MUST be maintained:
@@ -126,4 +140,4 @@ This constitution supersedes all other development practices for the Waiter-Winf
 - **Compliance**: All code changes SHOULD be checked against principles during review
 - **Exceptions**: Temporary exceptions MUST be documented with TODO and tracking issue
 
-**Version**: 0.1.1 | **Ratified**: 2026-01-31 | **Last Amended**: 2026-01-31
+**Version**: 0.2.0 | **Ratified**: 2026-01-31 | **Last Amended**: 2026-01-31
