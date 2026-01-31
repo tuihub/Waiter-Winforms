@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Waiter.Data.Configurations;
 using Waiter.Data.Models;
 
 namespace Waiter.Data
@@ -14,6 +15,11 @@ namespace Waiter.Data
         public DbSet<CachedApp> CachedApps { get; set; }
         public DbSet<CachedAppCategory> CachedAppCategories { get; set; }
         public DbSet<TaskHistory> TaskHistories { get; set; }
+
+        // App Launch feature entities
+        public DbSet<AppPackageLaunchSettings> AppPackageLaunchSettings { get; set; }
+        public DbSet<RuntimeSession> RuntimeSessions { get; set; }
+        public DbSet<CachedUpload> CachedUploads { get; set; }
 
         private readonly string _dbPath;
 
@@ -78,6 +84,11 @@ namespace Waiter.Data
                 entity.HasIndex(e => e.TaskId);
                 entity.HasIndex(e => e.Status);
             });
+
+            // Apply App Launch feature configurations
+            modelBuilder.ApplyConfiguration(new AppPackageLaunchSettingsConfiguration());
+            modelBuilder.ApplyConfiguration(new RuntimeSessionConfiguration());
+            modelBuilder.ApplyConfiguration(new CachedUploadConfiguration());
         }
     }
 }

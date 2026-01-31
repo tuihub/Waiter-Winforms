@@ -255,6 +255,181 @@ namespace Waiter.Data
 
         #endregion
 
+        #region AppPackageLaunchSettings Operations
+
+        /// <summary>
+        /// Gets launch settings for an app package.
+        /// </summary>
+        /// <param name="appPackageId">App package ID</param>
+        /// <returns>Launch settings or null if not found</returns>
+        public async Task<AppPackageLaunchSettings?> GetLaunchSettingsAsync(long appPackageId)
+        {
+            return await _context.AppPackageLaunchSettings
+                .FirstOrDefaultAsync(x => x.AppPackageId == appPackageId);
+        }
+
+        /// <summary>
+        /// Saves launch settings for an app package.
+        /// </summary>
+        /// <param name="settings">Launch settings to save</param>
+        public async Task SaveLaunchSettingsAsync(AppPackageLaunchSettings settings)
+        {
+            if (settings.Id == 0)
+            {
+                _context.AppPackageLaunchSettings.Add(settings);
+            }
+            else
+            {
+                _context.AppPackageLaunchSettings.Update(settings);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        #endregion
+
+        #region RuntimeSession Operations
+
+        /// <summary>
+        /// Creates a new runtime session.
+        /// </summary>
+        /// <param name="session">Runtime session to create</param>
+        /// <returns>Created session with ID</returns>
+        public async Task<RuntimeSession> CreateRuntimeSessionAsync(RuntimeSession session)
+        {
+            _context.RuntimeSessions.Add(session);
+            await _context.SaveChangesAsync();
+            return session;
+        }
+
+        /// <summary>
+        /// Updates an existing runtime session.
+        /// </summary>
+        /// <param name="session">Runtime session to update</param>
+        public async Task UpdateRuntimeSessionAsync(RuntimeSession session)
+        {
+            _context.RuntimeSessions.Update(session);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Gets a runtime session by ID.
+        /// </summary>
+        /// <param name="sessionId">Session ID</param>
+        /// <returns>Runtime session or null if not found</returns>
+        public async Task<RuntimeSession?> GetRuntimeSessionAsync(long sessionId)
+        {
+            return await _context.RuntimeSessions.FindAsync(sessionId);
+        }
+
+        /// <summary>
+        /// Gets recent runtime sessions for an app package.
+        /// </summary>
+        /// <param name="appPackageId">App package ID</param>
+        /// <param name="count">Maximum number of sessions to return</param>
+        /// <returns>List of recent sessions</returns>
+        public async Task<List<RuntimeSession>> GetRecentSessionsAsync(long appPackageId, int count = 10)
+        {
+            return await _context.RuntimeSessions
+                .Where(s => s.AppPackageId == appPackageId)
+                .OrderByDescending(s => s.StartTime)
+                .Take(count)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets total runtime for an app package.
+        /// </summary>
+        /// <param name="appPackageId">App package ID</param>
+        /// <returns>Total runtime duration</returns>
+        public async Task<TimeSpan> GetTotalRuntimeAsync(long appPackageId)
+        {
+            var sessions = await _context.RuntimeSessions
+                .Where(s => s.AppPackageId == appPackageId && s.EndTime != null)
+                .ToListAsync();
+
+            var totalTicks = sessions
+                .Where(s => s.Duration.HasValue)
+                .Sum(s => s.Duration!.Value.Ticks);
+
+            return TimeSpan.FromTicks(totalTicks);
+        }
+
+        #endregion
+
+        #region CachedUpload Operations
+
+        /// <summary>
+        /// Creates a new cached upload record.
+        /// </summary>
+        /// <param name="upload">Cached upload to create</param>
+        /// <returns>Created upload with ID</returns>
+        public async Task<CachedUpload> CreateCachedUploadAsync(CachedUpload upload)
+        {
+            _context.CachedUploads.Add(upload);
+            await _context.SaveChangesAsync();
+            return upload;
+        }
+
+        /// <summary>
+        /// Gets all pending uploads that haven't expired.
+        /// </summary>
+        /// <returns>List of pending uploads</returns>
+        public async Task<List<CachedUpload>> GetPendingUploadsAsync()
+        {
+            return await _context.CachedUploads
+                .Where(u => u.ExpiresAt > DateTime.UtcNow)
+                .OrderBy(u => u.CreatedAt)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets a cached upload by ID.
+        /// </summary>
+        /// <param name="uploadId">Upload ID</param>
+        /// <returns>Cached upload or null if not found</returns>
+        public async Task<CachedUpload?> GetCachedUploadAsync(long uploadId)
+        {
+            return await _context.CachedUploads.FindAsync(uploadId);
+        }
+
+        /// <summary>
+        /// Updates an existing cached upload.
+        /// </summary>
+        /// <param name="upload">Cached upload to update</param>
+        public async Task UpdateCachedUploadAsync(CachedUpload upload)
+        {
+            _context.CachedUploads.Update(upload);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Deletes a cached upload by ID.
+        /// </summary>
+        /// <param name="uploadId">Upload ID</param>
+        public async Task DeleteCachedUploadAsync(long uploadId)
+        {
+            var upload = await _context.CachedUploads.FindAsync(uploadId);
+            if (upload != null)
+            {
+                _context.CachedUploads.Remove(upload);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Gets all expired cached uploads.
+        /// </summary>
+        /// <returns>List of expired uploads</returns>
+        public async Task<List<CachedUpload>> GetExpiredCachedUploadsAsync()
+        {
+            return await _context.CachedUploads
+                .Where(u => u.ExpiresAt < DateTime.UtcNow)
+                .ToListAsync();
+        }
+
+        #endregion
+
         public void Dispose()
         {
             Dispose(true);

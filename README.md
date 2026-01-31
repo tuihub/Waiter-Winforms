@@ -18,6 +18,21 @@ A WinForms client application for TuiHub, designed with a classic Steam-like int
   - View app details
   - Delete apps
 
+- **App Launch & Runtime Tracking**
+  - One-click launch for configured applications
+  - Automatic runtime tracking and statistics
+  - Direct process monitoring (track launched process)
+  - Process name monitoring (track child processes)
+  - Abnormal exit detection with user prompts
+  - Real-time progress feedback during all phases
+
+- **Save Data Backup**
+  - Automatic save file compression and upload
+  - SHA256 integrity verification
+  - Network error handling with offline caching
+  - Automatic retry when connection restored
+  - See [spec](specs/001-app-launch-runtime/spec.md) for details
+
 - **App Category Management**
   - Create, update, and delete app categories
   - Organize apps into categories
@@ -63,7 +78,11 @@ Waiter/
 │   │   ├── AppSetting.cs
 │   │   ├── CachedApp.cs
 │   │   ├── CachedAppCategory.cs
-│   │   └── TaskHistory.cs
+│   │   ├── TaskHistory.cs
+│   │   ├── AppPackageLaunchSettings.cs  # App launch configuration
+│   │   ├── RuntimeSession.cs            # Runtime tracking records
+│   │   └── CachedUpload.cs              # Offline upload queue
+│   ├── Configurations/      # EF Core entity configurations
 │   ├── WaiterDbContext.cs   # EF Core DbContext
 │   └── DatabaseService.cs   # Database operations service
 ├── Forms/                    # WinForms UI
@@ -71,16 +90,24 @@ Waiter/
 │   ├── LoginForm.cs         # Login dialog
 │   ├── SettingsForm.cs      # Settings dialog
 │   ├── AppCategoryForm.cs   # App category management
-│   └── BackgroundTasksForm.cs # Background task viewer
+│   ├── BackgroundTasksForm.cs # Background task viewer
+│   └── ProgressDialog.cs    # Launch/upload progress dialog
 ├── Services/                 # Core services
 │   ├── LibrarianClientService.cs  # gRPC client for TuiHub API
 │   ├── TokenService.cs           # JWT token management (with DB persistence)
 │   ├── ConfigService.cs          # Application configuration (with DB persistence)
-│   └── BackgroundTaskService.cs  # Background task management
+│   ├── BackgroundTaskService.cs  # Background task management
+│   ├── IAppLaunchService.cs      # App launch service interface
+│   ├── AppLaunchService.cs       # App launch orchestration
+│   ├── IProcessMonitorService.cs # Process monitor interface
+│   ├── ProcessMonitorService.cs  # Process lifecycle tracking
+│   ├── ISaveDataService.cs       # Save data service interface
+│   └── SaveDataService.cs        # Save archive/hash operations
 ├── Interceptors/             # gRPC interceptors
 │   └── ClientTokenInterceptor.cs # Automatic token handling
 ├── Helpers/                  # Helper utilities
-│   └── WindowHelper.cs      # Window positioning helpers
+│   ├── WindowHelper.cs      # Window positioning helpers
+│   └── ProgressStreamContent.cs # HTTP upload progress tracking
 └── Program.cs               # Application entry point with DI setup
 ```
 

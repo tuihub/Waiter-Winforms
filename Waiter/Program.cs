@@ -42,6 +42,11 @@ static class Program
                 // gRPC client service
                 services.AddSingleton<LibrarianClientService>();
 
+                // App Launch services
+                services.AddSingleton<IProcessMonitorService, ProcessMonitorService>();
+                services.AddSingleton<ISaveDataService, SaveDataService>();
+                services.AddSingleton<IAppLaunchService, AppLaunchService>();
+
                 // Forms
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();

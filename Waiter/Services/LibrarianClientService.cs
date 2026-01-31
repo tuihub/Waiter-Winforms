@@ -3,6 +3,7 @@ using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using TuiHub.Protos.Librarian.Sephirah.V1;
+using Waiter.Helpers;
 using Waiter.Interceptors;
 
 namespace Waiter.Services
@@ -1624,6 +1625,137 @@ namespace Waiter.Services
                 _logger.LogError(ex, "Failed to search app infos");
                 return null;
             }
+        }
+
+        #endregion
+
+        #region Gebura - App RunTime Management (Extended for RuntimeSession)
+
+        /// <summary>
+        /// Reports runtime statistics for a RuntimeSession to the server.
+        /// </summary>
+        /// <param name="session">Runtime session to report</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>True if successful, false otherwise</returns>
+        public async Task<bool> ReportRuntimeAsync(Data.Models.RuntimeSession session, CancellationToken cancellationToken = default)
+        {
+            if (!session.EndTime.HasValue)
+            {
+                _logger.LogWarning("Cannot report runtime for session {SessionId}: EndTime is null", session.Id);
+                return false;
+            }
+
+            try
+            {
+                var client = GetAuthenticatedClient();
+                var request = new BatchCreateAppRunTimeRequest();
+
+                var duration = session.EndTime.Value - session.StartTime;
+                var appRunTime = new AppRunTime
+                {
+                    Id = new TuiHub.Protos.Librarian.V1.InternalID { Id = 0 }, // Server assigns ID
+                    AppId = new TuiHub.Protos.Librarian.V1.InternalID { Id = session.AppPackageId },
+                    DeviceId = new TuiHub.Protos.Librarian.V1.InternalID { Id = session.DeviceId },
+                    RunTime = new TuiHub.Protos.Librarian.V1.TimeRange
+                    {
+                        StartTime = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(
+                            DateTime.SpecifyKind(session.StartTime, DateTimeKind.Utc)),
+                        Duration = Google.Protobuf.WellKnownTypes.Duration.FromTimeSpan(duration)
+                    }
+                };
+
+                request.AppRunTimes.Add(appRunTime);
+
+                var callOptions = new Grpc.Core.CallOptions(cancellationToken: cancellationToken);
+                await client.BatchCreateAppRunTimeAsync(request, callOptions);
+
+                _logger.LogInformation("Successfully reported runtime for session {SessionId}", session.Id);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to report runtime for session {SessionId}", session.Id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets upload token for save file.
+        /// </summary>
+        /// <param name="appId">App package ID</param>
+        /// <param name="saveFile">Archive file info</param>
+        /// <param name="sha256Hash">File SHA256 hash</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Upload token (presigned URL)</returns>
+        public async Task<string> GetSaveFileUploadTokenAsync(
+            long appId,
+            FileInfo saveFile,
+            string sha256Hash,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var client = GetAuthenticatedClient();
+
+                // Convert hex SHA256 string to ByteString
+                var sha256Bytes = Convert.FromHexString(sha256Hash);
+
+                var request = new UploadAppSaveFileRequest
+                {
+                    AppId = new TuiHub.Protos.Librarian.V1.InternalID { Id = appId },
+                    FileMetadata = new TuiHub.Protos.Librarian.V1.FileMetadata
+                    {
+                        Name = saveFile.Name,
+                        SizeBytes = saveFile.Length,
+                        Sha256 = Google.Protobuf.ByteString.CopyFrom(sha256Bytes),
+                        Type = TuiHub.Protos.Librarian.V1.FileType.GeburaSave
+                    }
+                };
+
+                var callOptions = new Grpc.Core.CallOptions(cancellationToken: cancellationToken);
+                var response = await client.UploadAppSaveFileAsync(request, callOptions);
+
+                _logger.LogInformation("Got upload token for save file: {FileName}", saveFile.Name);
+                return response.UploadToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get save file upload token for app {AppId}", appId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Uploads save file data using presigned URL.
+        /// </summary>
+        /// <param name="uploadToken">Presigned URL from GetSaveFileUploadTokenAsync</param>
+        /// <param name="saveFile">File to upload</param>
+        /// <param name="progress">Upload progress callback (0-100)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        public async Task UploadSaveFileDataAsync(
+            string uploadToken,
+            FileInfo saveFile,
+            IProgress<int>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Uploading save file '{FileName}' ({Size} bytes) to {Url}",
+                saveFile.Name, saveFile.Length, uploadToken);
+
+            using var httpClient = new HttpClient();
+            await using var fileStream = saveFile.OpenRead();
+
+            var progressContent = new ProgressStreamContent(fileStream, progress, saveFile.Length);
+            progressContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+
+            var request = new HttpRequestMessage(HttpMethod.Put, uploadToken)
+            {
+                Content = progressContent
+            };
+
+            var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            _logger.LogInformation("Save file uploaded successfully");
         }
 
         #endregion

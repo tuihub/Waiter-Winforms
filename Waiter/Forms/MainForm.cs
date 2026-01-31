@@ -1,5 +1,6 @@
 using Waiter.Services;
 using Waiter.Helpers;
+using Waiter.Data;
 using TuiHub.Protos.Librarian.Sephirah.V1;
 
 namespace Waiter.Forms
@@ -13,6 +14,8 @@ namespace Waiter.Forms
         private readonly TokenService _tokenService;
         private readonly ConfigService _configService;
         private readonly BackgroundTaskService _taskService;
+        private readonly IAppLaunchService _appLaunchService;
+        private readonly DatabaseService _databaseService;
 
         private List<App> _apps = new();
         private App? _selectedApp;
@@ -22,12 +25,16 @@ namespace Waiter.Forms
             LibrarianClientService clientService,
             TokenService tokenService,
             ConfigService configService,
-            BackgroundTaskService taskService)
+            BackgroundTaskService taskService,
+            IAppLaunchService appLaunchService,
+            DatabaseService databaseService)
         {
             _clientService = clientService;
             _tokenService = tokenService;
             _configService = configService;
             _taskService = taskService;
+            _appLaunchService = appLaunchService;
+            _databaseService = databaseService;
 
             InitializeComponent();
 
@@ -214,15 +221,162 @@ namespace Waiter.Forms
             }
         }
 
-        private void BtnLaunch_Click(object? sender, EventArgs e)
+        private async void BtnLaunch_Click(object? sender, EventArgs e)
         {
-            if (_selectedApp != null)
+            if (_selectedApp == null) return;
+
+            var appPackageId = _selectedApp.Id.Id;
+
+            try
+            {
+                // Validate configuration
+                var validation = await _appLaunchService.ValidateLaunchConfigurationAsync(appPackageId);
+                if (!validation.IsValid)
+                {
+                    var errorMessage = string.Join("\n", validation.Errors);
+                    MessageBox.Show(
+                        $"Cannot launch app:\n\n{errorMessage}",
+                        "Launch Configuration Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Check if already running
+                var runningProcess = await _appLaunchService.CheckIfRunningAsync(appPackageId);
+                if (runningProcess != null)
+                {
+                    var result = MessageBox.Show(
+                        $"'{_selectedApp.Name}' is already running (PID: {runningProcess.ProcessId}).\n\nLaunch anyway?",
+                        "Already Running",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (result != DialogResult.Yes) return;
+                }
+
+                // Create and show progress dialog
+                using var progressDialog = new ProgressDialog($"Launching {_selectedApp.Name}");
+
+                var launchProgress = new Progress<LaunchProgress>(p =>
+                {
+                    progressDialog.UpdateStatus(p.Message);
+                    progressDialog.UpdateProgress(p.ProgressPercentage ?? -1);
+
+                    // Hide dialog during tracking phase
+                    if (p.Phase == LaunchPhase.Tracking)
+                    {
+                        progressDialog.WindowState = FormWindowState.Minimized;
+                    }
+                });
+
+                // Start launch on background thread
+                var launchTask = Task.Run(async () =>
+                {
+                    return await _appLaunchService.LaunchAndTrackAsync(
+                        appPackageId, launchProgress, progressDialog.CancellationToken);
+                });
+
+                // Show dialog (non-blocking)
+                progressDialog.Show(this);
+
+                try
+                {
+                    // Wait for launch to complete
+                    var session = await launchTask;
+
+                    // Restore dialog for upload phase
+                    progressDialog.WindowState = FormWindowState.Normal;
+                    progressDialog.BringToFront();
+
+                    // Handle abnormal exit
+                    if (session.Status == Data.Models.SessionStatus.Abnormal)
+                    {
+                        var uploadResult = MessageBox.Show(
+                            $"'{_selectedApp.Name}' exited abnormally (exit code {session.ExitCode}).\n\nUpload runtime data anyway?",
+                            "Abnormal Exit",
+                            MessageBoxButtons.YesNo,
+                            MessageBoxIcon.Warning);
+
+                        if (uploadResult != DialogResult.Yes)
+                        {
+                            // Skip upload
+                            session.Status = Data.Models.SessionStatus.Skipped;
+                            session.UploadAttempted = true;
+                            await _databaseService.UpdateRuntimeSessionAsync(session);
+
+                            progressDialog.CloseDialog();
+                            MessageBox.Show(
+                                $"Runtime recorded: {session.Duration?.ToString(@"hh\:mm\:ss") ?? "Unknown"}\nUpload skipped per user request.",
+                                "Session Complete",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+                            return;
+                        }
+                    }
+
+                    // Upload session data
+                    var uploadProgress = new Progress<UploadProgress>(p =>
+                    {
+                        progressDialog.UpdateStatus(p.Message);
+                        progressDialog.UpdateProgress(p.ProgressPercentage ?? -1);
+                    });
+
+                    await _appLaunchService.UploadSessionDataAsync(
+                        session.Id, uploadProgress, progressDialog.CancellationToken);
+
+                    progressDialog.CloseDialog();
+
+                    MessageBox.Show(
+                        $"Session complete!\n\nRuntime: {session.Duration?.ToString(@"hh\:mm\:ss") ?? "Unknown"}",
+                        "Success",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (OperationCanceledException)
+                {
+                    progressDialog.CloseDialog();
+                    _statusLabel.Text = "Launch cancelled";
+                }
+                catch (Grpc.Core.RpcException rpcEx)
+                {
+                    // Network/gRPC errors - data cached for retry
+                    progressDialog.CloseDialog();
+                    MessageBox.Show(
+                        $"Upload failed due to network error. Data has been cached locally and will retry automatically.\n\nDetails: {rpcEx.Status.Detail}",
+                        "Upload Cached",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    _statusLabel.Text = "Upload cached for later retry";
+                }
+                catch (HttpRequestException httpEx)
+                {
+                    // Network errors during HTTP upload
+                    progressDialog.CloseDialog();
+                    MessageBox.Show(
+                        $"Upload failed due to network error. Data has been cached locally and will retry automatically.\n\nDetails: {httpEx.Message}",
+                        "Upload Cached",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    _statusLabel.Text = "Upload cached for later retry";
+                }
+                catch (Exception ex)
+                {
+                    progressDialog.CloseDialog();
+                    MessageBox.Show(
+                        $"Error during launch: {ex.Message}",
+                        "Launch Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Launch functionality for '{_selectedApp.Name}' is not implemented yet.\nThis is a placeholder for future implementation.",
-                    "Launch App",
+                    $"Failed to launch: {ex.Message}",
+                    "Error",
                     MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                    MessageBoxIcon.Error);
             }
         }
 
