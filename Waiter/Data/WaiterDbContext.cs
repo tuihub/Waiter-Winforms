@@ -21,6 +21,9 @@ namespace Waiter.Data
         public DbSet<RuntimeSession> RuntimeSessions { get; set; }
         public DbSet<CachedUpload> CachedUploads { get; set; }
 
+        // Persistent Task Queue feature entities
+        public DbSet<PersistentTask> PersistentTasks { get; set; }
+
         private readonly string _dbPath;
 
         public WaiterDbContext()
@@ -89,6 +92,9 @@ namespace Waiter.Data
             modelBuilder.ApplyConfiguration(new AppPackageLaunchSettingsConfiguration());
             modelBuilder.ApplyConfiguration(new RuntimeSessionConfiguration());
             modelBuilder.ApplyConfiguration(new CachedUploadConfiguration());
+
+            // Apply Persistent Task Queue feature configuration
+            modelBuilder.ApplyConfiguration(new PersistentTaskConfiguration());
         }
     }
 }

@@ -16,6 +16,7 @@ namespace Waiter.Forms
         private readonly BackgroundTaskService _taskService;
         private readonly IAppLaunchService _appLaunchService;
         private readonly DatabaseService _databaseService;
+        private readonly IPersistentTaskService _persistentTaskService;
 
         private List<App> _apps = new();
         private App? _selectedApp;
@@ -27,7 +28,8 @@ namespace Waiter.Forms
             ConfigService configService,
             BackgroundTaskService taskService,
             IAppLaunchService appLaunchService,
-            DatabaseService databaseService)
+            DatabaseService databaseService,
+            IPersistentTaskService persistentTaskService)
         {
             _clientService = clientService;
             _tokenService = tokenService;
@@ -35,6 +37,7 @@ namespace Waiter.Forms
             _taskService = taskService;
             _appLaunchService = appLaunchService;
             _databaseService = databaseService;
+            _persistentTaskService = persistentTaskService;
 
             InitializeComponent();
 
@@ -498,7 +501,7 @@ namespace Waiter.Forms
 
         private void OpenBackgroundTasks()
         {
-            using var tasksForm = new BackgroundTasksForm(_taskService);
+            using var tasksForm = new BackgroundTasksForm(_taskService, _persistentTaskService);
             WindowHelper.ShowCenteredDialog(tasksForm, this);
         }
 

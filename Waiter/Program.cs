@@ -47,6 +47,9 @@ static class Program
                 services.AddSingleton<ISaveDataService, SaveDataService>();
                 services.AddSingleton<IAppLaunchService, AppLaunchService>();
 
+                // Persistent Task Queue services
+                services.AddSingleton<IPersistentTaskService, PersistentTaskService>();
+
                 // Forms
                 services.AddTransient<MainForm>();
                 services.AddTransient<LoginForm>();
@@ -59,6 +62,15 @@ static class Program
         // Initialize database
         var dbService = _host.Services.GetRequiredService<DatabaseService>();
         dbService.InitializeAsync().GetAwaiter().GetResult();
+
+        // Initialize persistent task service and restore tasks
+        var persistentTaskService = _host.Services.GetRequiredService<IPersistentTaskService>();
+        var backgroundTaskService = _host.Services.GetRequiredService<BackgroundTaskService>();
+        var loadedTasks = persistentTaskService.InitializeAsync().GetAwaiter().GetResult();
+        foreach (var task in loadedTasks)
+        {
+            backgroundTaskService.RestoreTask(task);
+        }
 
         // Get the main form from DI container
         var mainForm = _host.Services.GetRequiredService<MainForm>();

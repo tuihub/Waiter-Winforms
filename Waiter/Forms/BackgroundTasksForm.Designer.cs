@@ -35,7 +35,11 @@ namespace Waiter.Forms
             this.columnHeader3 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader4 = new System.Windows.Forms.ColumnHeader();
             this.columnHeader5 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader6 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader7 = new System.Windows.Forms.ColumnHeader();
+            this.columnHeader8 = new System.Windows.Forms.ColumnHeader();
             this._lblStatus = new System.Windows.Forms.Label();
+            this._btnRetry = new System.Windows.Forms.Button();
             this._btnClear = new System.Windows.Forms.Button();
             this._btnClose = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -59,16 +63,20 @@ namespace Waiter.Forms
             this.columnHeader2,
             this.columnHeader3,
             this.columnHeader4,
-            this.columnHeader5});
+            this.columnHeader5,
+            this.columnHeader6,
+            this.columnHeader7,
+            this.columnHeader8});
             this._listViewTasks.ForeColor = System.Drawing.Color.White;
             this._listViewTasks.FullRowSelect = true;
             this._listViewTasks.GridLines = true;
             this._listViewTasks.Location = new System.Drawing.Point(20, 55);
             this._listViewTasks.Name = "_listViewTasks";
-            this._listViewTasks.Size = new System.Drawing.Size(640, 250);
+            this._listViewTasks.Size = new System.Drawing.Size(760, 250);
             this._listViewTasks.TabIndex = 1;
             this._listViewTasks.UseCompatibleStateImageBehavior = false;
             this._listViewTasks.View = System.Windows.Forms.View.Details;
+            this._listViewTasks.SelectedIndexChanged += new System.EventHandler(this.ListViewTasks_SelectedIndexChanged);
             // 
             // columnHeader1
             // 
@@ -93,7 +101,22 @@ namespace Waiter.Forms
             // columnHeader5
             // 
             this.columnHeader5.Text = "Message";
-            this.columnHeader5.Width = 180;
+            this.columnHeader5.Width = 150;
+            // 
+            // columnHeader6
+            // 
+            this.columnHeader6.Text = "Created";
+            this.columnHeader6.Width = 100;
+            // 
+            // columnHeader7
+            // 
+            this.columnHeader7.Text = "Completed";
+            this.columnHeader7.Width = 100;
+            // 
+            // columnHeader8
+            // 
+            this.columnHeader8.Text = "Retries";
+            this.columnHeader8.Width = 50;
             // 
             // _lblStatus
             // 
@@ -103,15 +126,29 @@ namespace Waiter.Forms
             this._lblStatus.Size = new System.Drawing.Size(400, 20);
             this._lblStatus.TabIndex = 2;
             // 
+            // _btnRetry
+            // 
+            this._btnRetry.BackColor = System.Drawing.Color.FromArgb(60, 60, 60);
+            this._btnRetry.Enabled = false;
+            this._btnRetry.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this._btnRetry.ForeColor = System.Drawing.Color.White;
+            this._btnRetry.Location = new System.Drawing.Point(450, 315);
+            this._btnRetry.Name = "_btnRetry";
+            this._btnRetry.Size = new System.Drawing.Size(100, 30);
+            this._btnRetry.TabIndex = 3;
+            this._btnRetry.Text = "Retry";
+            this._btnRetry.UseVisualStyleBackColor = false;
+            this._btnRetry.Click += new System.EventHandler(this.BtnRetry_Click);
+            // 
             // _btnClear
             // 
             this._btnClear.BackColor = System.Drawing.Color.FromArgb(60, 60, 60);
             this._btnClear.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this._btnClear.ForeColor = System.Drawing.Color.White;
-            this._btnClear.Location = new System.Drawing.Point(450, 315);
+            this._btnClear.Location = new System.Drawing.Point(560, 315);
             this._btnClear.Name = "_btnClear";
             this._btnClear.Size = new System.Drawing.Size(100, 30);
-            this._btnClear.TabIndex = 3;
+            this._btnClear.TabIndex = 4;
             this._btnClear.Text = "Clear Completed";
             this._btnClear.UseVisualStyleBackColor = false;
             this._btnClear.Click += new System.EventHandler(this.BtnClear_Click);
@@ -121,10 +158,10 @@ namespace Waiter.Forms
             this._btnClose.BackColor = System.Drawing.Color.FromArgb(60, 60, 60);
             this._btnClose.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this._btnClose.ForeColor = System.Drawing.Color.White;
-            this._btnClose.Location = new System.Drawing.Point(560, 315);
+            this._btnClose.Location = new System.Drawing.Point(670, 315);
             this._btnClose.Name = "_btnClose";
             this._btnClose.Size = new System.Drawing.Size(100, 30);
-            this._btnClose.TabIndex = 4;
+            this._btnClose.TabIndex = 5;
             this._btnClose.Text = "Close";
             this._btnClose.UseVisualStyleBackColor = false;
             this._btnClose.Click += new System.EventHandler(this.BtnClose_Click);
@@ -134,9 +171,10 @@ namespace Waiter.Forms
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(30, 30, 30);
-            this.ClientSize = new System.Drawing.Size(684, 361);
+            this.ClientSize = new System.Drawing.Size(800, 361);
             this.Controls.Add(this._btnClose);
             this.Controls.Add(this._btnClear);
+            this.Controls.Add(this._btnRetry);
             this.Controls.Add(this._lblStatus);
             this.Controls.Add(this._listViewTasks);
             this.Controls.Add(this.lblTitle);
@@ -158,7 +196,11 @@ namespace Waiter.Forms
         private System.Windows.Forms.ColumnHeader columnHeader3;
         private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.ColumnHeader columnHeader5;
+        private System.Windows.Forms.ColumnHeader columnHeader6;
+        private System.Windows.Forms.ColumnHeader columnHeader7;
+        private System.Windows.Forms.ColumnHeader columnHeader8;
         private System.Windows.Forms.Label _lblStatus;
+        private System.Windows.Forms.Button _btnRetry;
         private System.Windows.Forms.Button _btnClear;
         private System.Windows.Forms.Button _btnClose;
     }

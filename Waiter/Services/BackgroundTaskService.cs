@@ -126,6 +126,27 @@ namespace Waiter.Services
             return _tasks.TryRemove(taskId, out _);
         }
 
+        /// <summary>
+        /// Adds a task that was loaded from persistence (doesn't trigger TaskAdded event).
+        /// </summary>
+        /// <param name="task">The task to restore.</param>
+        public void RestoreTask(BackgroundTask task)
+        {
+            _tasks[task.Id] = task;
+            // Note: Does NOT raise TaskAdded event to avoid re-persisting
+        }
+
+        /// <summary>
+        /// Gets a task by ID.
+        /// </summary>
+        /// <param name="taskId">The ID of the task to retrieve.</param>
+        /// <returns>The task, or null if not found.</returns>
+        public BackgroundTask? GetTask(string taskId)
+        {
+            _tasks.TryGetValue(taskId, out var task);
+            return task;
+        }
+
         private string GenerateTaskId()
         {
             return $"task_{Interlocked.Increment(ref _taskIdCounter)}_{DateTime.Now:yyyyMMddHHmmss}";
@@ -158,7 +179,8 @@ namespace Waiter.Services
         Running,
         Completed,
         Failed,
-        Cancelled
+        Cancelled,
+        Interrupted  // Task was running when app closed unexpectedly
     }
 
     public class DownloadTaskDetails
